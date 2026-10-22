@@ -1,0 +1,628 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Mayank Snake Game</title>
+
+<style>
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: Arial, sans-serif;
+  background: radial-gradient(circle at top, #173b40, #061014 65%);
+  color: white;
+  padding: 18px;
+}
+
+.game {
+  width: 100%;
+  max-width: 510px;
+  padding: 24px;
+  border: 1px solid #24565a;
+  border-radius: 25px;
+  background: rgba(8, 25, 28, 0.94);
+  box-shadow: 0 0 45px #00ff9915;
+  text-align: center;
+}
+
+h1 {
+  font-size: clamp(27px, 6vw, 38px);
+  color: #50ff9c;
+  text-shadow: 0 0 18px #00ff8866;
+  margin-bottom: 7px;
+}
+
+.subtitle {
+  color: #a3c5bd;
+  margin-bottom: 22px;
+  font-size: 14px;
+}
+
+.stats {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.stat {
+  flex: 1;
+  padding: 13px 8px;
+  border-radius: 13px;
+  background: #102b2d;
+  border: 1px solid #24514c;
+}
+
+.stat small {
+  display: block;
+  color: #a4c6bc;
+  margin-bottom: 6px;
+}
+
+.stat strong {
+  font-size: 23px;
+  color: #5bffa5;
+}
+
+.board-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border: 2px solid #23795b;
+  border-radius: 13px;
+  overflow: hidden;
+  background: #071515;
+  box-shadow: 0 0 24px #00ff881b;
+}
+
+canvas {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  background: #04120edb;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  gap: 13px;
+}
+
+.overlay h2 {
+  font-size: 28px;
+  color: #5bffa5;
+}
+
+.overlay p {
+  color: #c5e3d7;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+button {
+  cursor: pointer;
+  border: none;
+  color: #03160c;
+  font-weight: bold;
+  font-size: 15px;
+  border-radius: 12px;
+  padding: 13px 23px;
+  background: linear-gradient(135deg, #78ffb4, #17d878);
+  transition: transform .2s, box-shadow .2s;
+}
+
+button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 5px 22px #00ff8850;
+}
+
+.controls {
+  display: grid;
+  grid-template-columns: repeat(3, 58px);
+  grid-template-rows: repeat(2, 48px);
+  gap: 7px;
+  justify-content: center;
+  margin: 19px auto 15px;
+}
+
+.controls button {
+  padding: 0;
+  font-size: 23px;
+  background: #153b35;
+  color: #69ffad;
+  border: 1px solid #327b60;
+  touch-action: manipulation;
+}
+
+.controls button:active {
+  background: #247653;
+}
+
+.up { grid-column: 2; grid-row: 1; }
+.left { grid-column: 1; grid-row: 2; }
+.down { grid-column: 2; grid-row: 2; }
+.right { grid-column: 3; grid-row: 2; }
+
+.bottom {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.bottom button {
+  padding: 11px 16px;
+  font-size: 13px;
+}
+
+.secondary {
+  background: #17352f;
+  color: white;
+  border: 1px solid #3b6859;
+}
+
+.help {
+  color: #8caea3;
+  font-size: 12px;
+  margin-top: 17px;
+  line-height: 1.7;
+}
+
+@media (max-width: 400px) {
+  .game { padding: 15px; }
+  .controls {
+    grid-template-columns: repeat(3, 52px);
+    grid-template-rows: repeat(2, 45px);
+  }
+}
+</style>
+</head>
+
+<body>
+
+<div class="game">
+  <h1>🐍 MAYANK SNAKE</h1>
+  <p class="subtitle">Eat the food. Grow bigger. Beat your high score!</p>
+
+  <div class="stats">
+    <div class="stat">
+      <small>🏆 SCORE</small>
+      <strong id="score">0</strong>
+    </div>
+    <div class="stat">
+      <small>⭐ BEST</small>
+      <strong id="best">0</strong>
+    </div>
+  </div>
+
+  <div class="board-wrap">
+    <canvas id="canvas" width="400" height="400"></canvas>
+
+    <div class="overlay" id="overlay">
+      <h2 id="message">SNAKE GAME</h2>
+      <p id="description">Eat the red food and make your snake grow. Don't hit the walls or yourself!</p>
+      <button id="startBtn">▶ START GAME</button>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="up" data-dir="up" aria-label="Up">▲</button>
+    <button class="left" data-dir="left" aria-label="Left">◀</button>
+    <button class="down" data-dir="down" aria-label="Down">▼</button>
+    <button class="right" data-dir="right" aria-label="Right">▶</button>
+  </div>
+
+  <div class="bottom">
+    <button id="pauseBtn" class="secondary">⏸ PAUSE</button>
+    <button id="restartBtn">↻ RESTART</button>
+  </div>
+
+  <p class="help">
+    🎮 Keyboard: Arrow Keys / WASD<br>
+    📱 Mobile: Use the buttons above<br>
+    🍎 Eat food to earn 10 points!
+  </p>
+</div>
+
+<script>
+const canvas = document.getElementById("canvas");
+const ctx = canvas.getContext("2d");
+
+const SIZE = 400;
+const CELL = 20;
+const TOTAL = SIZE / CELL;
+
+const scoreEl = document.getElementById("score");
+const bestEl = document.getElementById("best");
+const overlay = document.getElementById("overlay");
+const message = document.getElementById("message");
+const description = document.getElementById("description");
+const startBtn = document.getElementById("startBtn");
+const pauseBtn = document.getElementById("pauseBtn");
+
+let snake, food, direction, nextDirection;
+let score = 0;
+let best = 0;
+let running = false;
+let paused = false;
+let gameOver = false;
+let lastTime = 0;
+let accumulator = 0;
+let particles = [];
+
+try {
+  best = Number(localStorage.getItem("mayankSnakeBest")) || 0;
+} catch (e) {}
+
+bestEl.textContent = best;
+
+function resetGame() {
+  snake = [
+    {x: 10, y: 10},
+    {x: 9, y: 10},
+    {x: 8, y: 10},
+    {x: 7, y: 10}
+  ];
+
+  direction = {x: 1, y: 0};
+  nextDirection = {x: 1, y: 0};
+  score = 0;
+  accumulator = 0;
+  particles = [];
+  gameOver = false;
+  paused = false;
+  running = false;
+
+  scoreEl.textContent = score;
+  pauseBtn.textContent = "⏸ PAUSE";
+
+  placeFood();
+  draw();
+}
+
+function placeFood() {
+  let attempts = 0;
+
+  do {
+    food = {
+      x: Math.floor(Math.random() * TOTAL),
+      y: Math.floor(Math.random() * TOTAL)
+    };
+    attempts++;
+  } while (
+    snake.some(s => s.x === food.x && s.y === food.y) &&
+    attempts < 1000
+  );
+}
+
+function startGame() {
+  if (gameOver) resetGame();
+
+  running = true;
+  paused = false;
+  overlay.style.display = "none";
+  pauseBtn.textContent = "⏸ PAUSE";
+  lastTime = performance.now();
+}
+
+function endGame() {
+  running = false;
+  gameOver = true;
+
+  message.textContent = "GAME OVER! 💥";
+  description.textContent =
+    "Your score: " + score + " points. Try again and beat your best!";
+  startBtn.textContent = "🔄 PLAY AGAIN";
+  overlay.style.display = "flex";
+}
+
+function setDirection(dir) {
+  const dirs = {
+    up:    {x: 0, y: -1},
+    down:  {x: 0, y: 1},
+    left:  {x: -1, y: 0},
+    right: {x: 1, y: 0}
+  };
+
+  const d = dirs[dir];
+  if (!d || !running || paused) return;
+
+  // Prevent the snake from reversing into itself.
+  if (d.x === -direction.x && d.y === -direction.y) return;
+
+  nextDirection = d;
+}
+
+document.querySelectorAll("[data-dir]").forEach(button => {
+  button.addEventListener("pointerdown", e => {
+    e.preventDefault();
+    setDirection(button.dataset.dir);
+  });
+});
+
+document.addEventListener("keydown", e => {
+  const keys = {
+    ArrowUp: "up", w: "up", W: "up",
+    ArrowDown: "down", s: "down", S: "down",
+    ArrowLeft: "left", a: "left", A: "left",
+    ArrowRight: "right", d: "right", D: "right"
+  };
+
+  if (keys[e.key]) {
+    e.preventDefault();
+    setDirection(keys[e.key]);
+  }
+
+  if (e.code === "Space") {
+    e.preventDefault();
+    if (!running && !gameOver) startGame();
+    else togglePause();
+  }
+});
+
+function togglePause() {
+  if (gameOver) return;
+
+  if (!running) {
+    startGame();
+    return;
+  }
+
+  paused = !paused;
+
+  if (paused) {
+    running = false;
+    message.textContent = "PAUSED ⏸";
+    description.textContent = "Take a break. Your snake is waiting!";
+    startBtn.textContent = "▶ RESUME";
+    overlay.style.display = "flex";
+    pauseBtn.textContent = "▶ RESUME";
+  } else {
+    running = true;
+    overlay.style.display = "none";
+    pauseBtn.textContent = "⏸ PAUSE";
+    lastTime = performance.now();
+  }
+}
+
+startBtn.addEventListener("click", () => {
+  if (paused) {
+    paused = false;
+    startGame();
+  } else {
+    startGame();
+  }
+});
+
+pauseBtn.addEventListener("click", togglePause);
+
+document.getElementById("restartBtn").addEventListener("click", () => {
+  resetGame();
+  startGame();
+});
+
+function addParticles(x, y) {
+  for (let i = 0; i < 12; i++) {
+    particles.push({
+      x: (x + 0.5) * CELL,
+      y: (y + 0.5) * CELL,
+      vx: (Math.random() - 0.5) * 150,
+      vy: (Math.random() - 0.5) * 150,
+      life: 0.45
+    });
+  }
+}
+
+function updateParticles(dt) {
+  particles.forEach(p => {
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+    p.life -= dt;
+  });
+
+  particles = particles.filter(p => p.life > 0);
+}
+
+function moveSnake() {
+  direction = nextDirection;
+
+  const head = {
+    x: snake[0].x + direction.x,
+    y: snake[0].y + direction.y
+  };
+
+  // Wall collision.
+  if (
+    head.x < 0 || head.x >= TOTAL ||
+    head.y < 0 || head.y >= TOTAL
+  ) {
+    endGame();
+    return;
+  }
+
+  const eating = head.x === food.x && head.y === food.y;
+
+  // The tail moves away unless food is eaten.
+  const body = eating ? snake : snake.slice(0, -1);
+
+  if (body.some(s => s.x === head.x && s.y === head.y)) {
+    endGame();
+    return;
+  }
+
+  snake.unshift(head);
+
+  if (eating) {
+    addParticles(food.x, food.y);
+    score += 10;
+    scoreEl.textContent = score;
+
+    if (score > best) {
+      best = score;
+      bestEl.textContent = best;
+      try {
+        localStorage.setItem("mayankSnakeBest", best);
+      } catch (e) {}
+    }
+
+    placeFood();
+  } else {
+    snake.pop();
+  }
+}
+
+function roundedRect(x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.roundRect(x, y, w, h, r);
+  ctx.fill();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, SIZE, SIZE);
+
+  // Dark board and subtle grid.
+  ctx.fillStyle = "#071515";
+  ctx.fillRect(0, 0, SIZE, SIZE);
+
+  ctx.strokeStyle = "#15312c";
+  ctx.lineWidth = 0.7;
+
+  for (let i = 0; i <= TOTAL; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * CELL, 0);
+    ctx.lineTo(i * CELL, SIZE);
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.moveTo(0, i * CELL);
+    ctx.lineTo(SIZE, i * CELL);
+    ctx.stroke();
+  }
+
+  // Glowing food.
+  const fx = (food.x + 0.5) * CELL;
+  const fy = (food.y + 0.5) * CELL;
+
+  ctx.save();
+  ctx.shadowColor = "#ff365e";
+  ctx.shadowBlur = 20;
+  ctx.fillStyle = "#ff3155";
+  ctx.beginPath();
+  ctx.arc(fx, fy, 7.5, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+
+  ctx.fillStyle = "#a9ff8b";
+  ctx.beginPath();
+  ctx.ellipse(fx + 3, fy - 9, 4, 2.5, -0.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Snake body with a smooth neon look.
+  snake.forEach((segment, i) => {
+    const x = segment.x * CELL;
+    const y = segment.y * CELL;
+    const inset = i === 0 ? 1 : 2.2;
+
+    ctx.save();
+
+    if (i === 0) {
+      ctx.shadowColor = "#38ff99";
+      ctx.shadowBlur = 13;
+      ctx.fillStyle = "#a0ffb9";
+    } else {
+      const brightness = Math.max(0.35, 1 - i * 0.025);
+      ctx.fillStyle = `rgb(${Math.floor(25 * brightness)}, ${Math.floor(235 * brightness)}, ${Math.floor(115 * brightness)})`;
+    }
+
+    roundedRect(
+      x + inset,
+      y + inset,
+      CELL - inset * 2,
+      CELL - inset * 2,
+      i === 0 ? 7 : 5
+    );
+
+    ctx.restore();
+  });
+
+  // Eyes follow the direction of travel.
+  const head = snake[0];
+  const cx = (head.x + 0.5) * CELL;
+  const cy = (head.y + 0.5) * CELL;
+
+  let eye1, eye2;
+
+  if (direction.x !== 0) {
+    eye1 = {x: cx + direction.x * 4, y: cy - 4};
+    eye2 = {x: cx + direction.x * 4, y: cy + 4};
+  } else {
+    eye1 = {x: cx - 4, y: cy + direction.y * 4};
+    eye2 = {x: cx + 4, y: cy + direction.y * 4};
+  }
+
+  ctx.fillStyle = "#05271a";
+
+  [eye1, eye2].forEach(eye => {
+    ctx.beginPath();
+    ctx.arc(eye.x, eye.y, 1.7, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  // Food-eating sparkle particles.
+  particles.forEach(p => {
+    ctx.globalAlpha = Math.min(1, p.life * 3);
+    ctx.fillStyle = "#76ffb0";
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  ctx.globalAlpha = 1;
+}
+
+function gameLoop(time) {
+  const dt = Math.min((time - lastTime) / 1000 || 0, 0.05);
+  lastTime = time;
+
+  updateParticles(dt);
+
+  if (running && !paused) {
+    accumulator += dt;
+
+    // Gets faster as the player scores more points.
+    const interval = Math.max(65, 125 - score * 0.25);
+
+    if (accumulator * 1000 >= interval) {
+      accumulator = 0;
+      moveSnake();
+    }
+  }
+
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+resetGame();
+requestAnimationFrame(time => {
+  lastTime = time;
+  gameLoop(time);
+});
+</script>
+
+</body>
+</html>
